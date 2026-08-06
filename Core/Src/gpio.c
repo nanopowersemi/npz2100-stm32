@@ -49,7 +49,7 @@ void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(Host_Led_GPIO_Port, Host_Led_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(Host_Led_GPIO_Port, Host_Led_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : Host_Led_Pin */
   GPIO_InitStruct.Pin = Host_Led_Pin;
