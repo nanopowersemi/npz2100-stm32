@@ -1,0 +1,26 @@
+name: Teste de Permissões (Docker e Sudo)
+
+on:
+  push:
+    branches: [ main, master ] # Altere se a sua branch principal tiver outro nome
+  workflow_dispatch: # Permite iniciar o teste manualmente pelo site do GitHub
+
+jobs:
+  validacao:
+    runs-on: self-hosted
+    
+    steps:
+      - name: 1. Checkout do Repositório
+        uses: actions/checkout@v4
+
+      - name: 2. Testar Acesso ao Sudo (Instalação rápida)
+        run: |
+          echo "A testar o comando sudo sem password..."
+          sudo apt-get update -y && sudo apt-get install -y screen
+          echo "Sudo validado com sucesso!"
+
+      - name: 3. Testar Acesso ao Docker
+        run: |
+          echo "A testar o Docker com o utilizador np-runner..."
+          docker run --rm hello-world
+          echo "Docker validado com sucesso!"
