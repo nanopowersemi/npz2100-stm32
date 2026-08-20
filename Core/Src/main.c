@@ -31,6 +31,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "npz2100_stm32.h"
+#include "npz2100_regmap.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -55,64 +56,6 @@
 /* nPZ2100 driver handle — lives for the duration of one boot cycle. */
 static NPZ2100_Handle_t hnpz;
 
-/* Tool-generated register map (byte-stream format).
- * Replace with the actual output from the Nanopower configuration tool.
- *
- * Format: [length][start_addr][data_0]...[data_(length-2)]
- * where length = 1 (start_addr) + N (data bytes).
- *
- * The diff inside NPZ2100_ApplyRegmap() ensures only registers that changed
- * since the last boot are written — zero I²C transactions on a warm boot
- * where configuration is unchanged.
- */
-static const uint8_t npz2100_regmap[] = {
-    /* ---- Global configuration: IOCFG1 @ 0x05 through TOUT_H @ 0x0D ---- */
-    10, 0x05,
-    0x00,       /* IOCFG1:  host PSW = power-switch mode                    */
-    0x00,       /* IOCFG2:  peripheral PSW = power-switch with rise detect  */
-    0xFF,       /* IOCFG3:  all INT pull-ups enabled at ~100 kΩ            */
-    0x00,       /* IOCFG4:  all INT pins = input active-high               */
-    0x1D,       /* IOCFG5:  SPI_AUTO=1, I2C pull-ups auto, PSW_SR=1        */
-    0x03,       /* SYSCFG1: peripheral 1 and 2 as wake-up sources           */
-    0x04,       /* SYSCFG2: ADC3 (battery) as wake-up source               */
-    0xFF,       /* TOUT_L:  maximum time-out (LSB)                          */
-    0x01,       /* TOUT_H:  maximum time-out (MSB)                          */
-
-    /* ---- Peripheral 1: I²C sensor @ 0x48, enabled, periodic poll ------- */
-    15, 0x1F,
-    0x00,       /* P_BANK:  slot 0                                          */
-    0x01,       /* CFGP1:   periodic power-on, poll+read+compare            */
-    0x00,       /* IOP1:    SW_LP1, INT1, CSN1                             */
-    0x00,       /* MODP1:   16-bit unsigned, default threshold trigger      */
-    0x00, 0x01, /* PERP1:   polling period = 256 system clocks              */
-    0x01,       /* NCMDP1:  1 init command in SRAM                          */
-    0x48,       /* ADDRP1:  sensor I²C address                              */
-    0x00,       /* RREGP1:  read from register 0x00                         */
-    0x20, 0x1C, /* THROVP1: over-threshold                                  */
-    0x00, 0x00, /* THRUNP1: under-threshold = 0 (disabled)                  */
-    0x08,       /* TWTP1:   post-init wait                                  */
-
-    /* ---- Peripheral 2–6: disabled (default) ----------------------------- */
-    15, 0x1F,
-    0x01, 0x00, 0x15, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00,
-
-    15, 0x1F,
-    0x02, 0x00, 0x2A, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00,
-
-    15, 0x1F,
-    0x03, 0x00, 0x3F, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00,
-
-    15, 0x1F,
-    0x04, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00,
-
-    15, 0x1F,
-    0x05, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00,
-};
 
 /* Sensor initialisation commands stored in nPZ2100 SRAM.
  * The nPZ2100 sends these to the sensor during autonomous polling.
@@ -255,7 +198,7 @@ int main(void)
     /* 5. On cold boot (power-on reset): write sensor init commands to SRAM.  */
     /*    nPZ2100 sends these autonomously while STM32 is off.                */
     /* ---------------------------------------------------------------------- */
-    if (reason.rst_src == NPZ2100_RST_SRC_POR) {
+    if (reason.rst_src == NPZ2100_RST_SRC_POR && reason.timeout == 0) {
         NPZ2100_SramWrite(&hnpz, 0x00u,
                           sensor_init_cmds, sizeof(sensor_init_cmds));
     }
