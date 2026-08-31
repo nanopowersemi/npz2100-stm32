@@ -139,7 +139,7 @@ static npz2100_err_t stm32_i2c_write(uint8_t        i2c_addr,
 //    /* Log the register and each data byte written. */
 //    printf("[NPZ2100] WR reg=0x%02X data=", buf[0]);
 //    for (size_t i = 1u; i < len; i++) {
-//        printf("0x%02X", buf[i]);
+//        //printf("0x%02X", buf[i]);
 //        if (i < len - 1u) { printf(" "); }
 //    }
 //    printf("\r\n");
@@ -319,6 +319,7 @@ NPZ2100_Status_t NPZ2100_Readback(NPZ2100_Handle_t *hnpz)
         return NPZ2100_ERR_ARG;
     }
 
+#if NPZ2100_SHADOW_ENABLE
     NPZ_LOG("Readback: syncing shadow from device ...");
     npz2100_err_t err = npz2100_map_readback(&hnpz->hal, &hnpz->shadow);
     if (err != NPZ2100_OK) {
@@ -327,6 +328,10 @@ NPZ2100_Status_t NPZ2100_Readback(NPZ2100_Handle_t *hnpz)
         NPZ_LOG("Readback OK: shadow synced");
     }
     return mid_to_status(err);
+#else
+    NPZ_LOG("Readback: shadow disabled (NPZ2100_SHADOW_ENABLE=0) - skipped");
+    return NPZ2100_OK;
+#endif
 }
 
 /* =========================================================================
@@ -348,13 +353,19 @@ NPZ2100_Status_t NPZ2100_ApplyRegmap(NPZ2100_Handle_t *hnpz,
     }
 
     /* Count how many registers differ before writing. */
+#if NPZ2100_SHADOW_ENABLE
     uint8_t ndiff = npz2100_map_diff_count(&hnpz->shadow, map, map_len);
+#else
+    uint8_t ndiff = 0u;  /* shadow disabled — all registers will be written */
+#endif
     NPZ_LOG("ApplyRegmap: %u register(s) differ from shadow", (unsigned)ndiff);
 
+#if NPZ2100_SHADOW_ENABLE
     if (ndiff == 0u) {
         NPZ_LOG("ApplyRegmap: device already in sync - no writes issued");
         return NPZ2100_OK;
     }
+#endif
 
     npz2100_err_t err = npz2100_map_apply(&hnpz->hal, &hnpz->shadow, map, map_len);
     if (err != NPZ2100_OK) {
@@ -371,10 +382,16 @@ NPZ2100_Status_t NPZ2100_ApplyRegmap(NPZ2100_Handle_t *hnpz,
 
 npz2100_config_t *NPZ2100_GetShadow(NPZ2100_Handle_t *hnpz)
 {
+#if NPZ2100_SHADOW_ENABLE
     if (hnpz == NULL) {
         return NULL;
     }
     return &hnpz->shadow;
+#else
+    (void)hnpz;
+    NPZ_LOG("GetShadow: shadow disabled (NPZ2100_SHADOW_ENABLE=0) — returns NULL");
+    return NULL;
+#endif
 }
 
 /* =========================================================================
@@ -387,6 +404,10 @@ NPZ2100_Status_t NPZ2100_ShadowFlush(NPZ2100_Handle_t *hnpz)
         return NPZ2100_ERR_ARG;
     }
 
+#if !NPZ2100_SHADOW_ENABLE
+    NPZ_LOG("ShadowFlush: shadow disabled (NPZ2100_SHADOW_ENABLE=0) — no-op");
+    return NPZ2100_OK;
+#else
     NPZ_LOG("ShadowFlush: pushing shadow changes to device ...");
 
     npz2100_err_t err = NPZ2100_OK;
@@ -448,11 +469,9 @@ NPZ2100_Status_t NPZ2100_ShadowFlush(NPZ2100_Handle_t *hnpz)
         NPZ_LOG("ShadowFlush OK");
     }
     return mid_to_status(err);
+#endif /* NPZ2100_SHADOW_ENABLE */
 }
 
-/* =========================================================================
- * SRAM access
- * ======================================================================= */
 
 NPZ2100_Status_t NPZ2100_SramWrite(NPZ2100_Handle_t *hnpz,
                                     uint8_t           sram_addr,
