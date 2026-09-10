@@ -337,7 +337,7 @@ All functions return `NPZ2100_OK` (0) on success or a negative `NPZ2100_Status_t
 
 | Symptom | Likely cause | Fix |
 |---------|-------------|-----|
-| Hangs in `while(1)` after `NPZ2100_Init` | Device not found | Check PC4/PC5 wiring; verify 4.7 kΩ pull-ups on SDA/SCL; confirm I²C address 0x6F |
+| Hangs in `while(1)` after `NPZ2100_Init` | Device not found | Check PC4/PC5 wiring; verify 4.7 kΩ pull-ups on SDA/SCL; confirm I²C address 0x3C |
 | `NPZ2100_ERR_IO` immediately | I²C not initialised | Ensure `MX_I2C1_Init()` runs before `NPZ2100_Init()` |
 | `NPZ2100_ERR_IO` on first write only | Clock mismatch | Verify I2C1 clock source is HSI in CubeMX Clock Config tab |
 | Build error: `npz2100_stm32.h: No such file` | Include path missing | Add `../NPZ2100/Inc` in Project → Properties → GCC Compiler → Include paths |

@@ -109,6 +109,7 @@
  * project preprocessor symbols before including any npz2100 header:
  *   - STM32CubeIDE: Project → Properties → C/C++ Build → Settings →
  *     MCU GCC Compiler → Preprocessor → Defined symbols: NPZ2100_SHADOW_ENABLE=0
+ *   - NCS/Zephyr:   prj.conf: CONFIG_NPZ2100_SHADOW=n  (see Kconfig)
  * ======================================================================= */
 #ifndef NPZ2100_SHADOW_ENABLE
   #define NPZ2100_SHADOW_ENABLE  1

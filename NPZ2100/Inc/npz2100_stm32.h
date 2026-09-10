@@ -37,7 +37,7 @@
  *
  * I²C pins: PC4 = SDA, PC5 = SCL  (I2C1, configured in CubeMX)
  * I²C speed: 100 kHz (Standard Mode — matches nPZ2100 max spec)
- * I²C address: 0x6F (7-bit, factory default)
+ * I²C address: 0x3C (7-bit, factory default)
  *
  * @version 0.7
  * @date    2026-05-06

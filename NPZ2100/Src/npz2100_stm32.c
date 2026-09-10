@@ -29,7 +29,7 @@
  * STM32L053 I2C specifics
  * -----------------------
  * STM32 HAL expects the 7-bit I2C address left-shifted by 1.
- * NPZ2100_I2C_ADDR (0x6F) becomes 0xDE for HAL calls.
+ * NPZ2100_I2C_ADDR (0x3C) becomes 0xDE for HAL calls.
  *
  * HAL_I2C_Mem_Read() issues the register-pointer write + data read
  * in one call with a repeated START between them, which is exactly
