@@ -3,7 +3,7 @@
  * @brief nPZ2100 STM32 HAL port implementation.
  *
  * This is the ONLY file that includes STM32 HAL headers.
- * npz2100.c and npz2100_mid.c remain strictly platform-agnostic.
+ * npz2100.c and npz2100_lib.c remain strictly platform-agnostic.
  *
  * Printf / UART logging
  * ---------------------
@@ -41,7 +41,7 @@
  */
 
 #include "npz2100_stm32.h"
-#include <stdio.h>    /* printf — retargeted to UART via __io_putchar */
+#include <stdio.h>    /* printf - retargeted to UART via __io_putchar */
 #include <string.h>   /* memset */
 
 /* =========================================================================
@@ -90,7 +90,7 @@ void NPZ2100_UartInit(UART_HandleTypeDef *huart)
  * character emitted by printf/puts.  This override sends each character
  * via HAL_UART_Transmit() in blocking mode (1 ms timeout per byte).
  *
- * Note: this override is global — it affects ALL printf calls in the
+ * Note: this override is global - it affects ALL printf calls in the
  * application, not just those inside this driver.  If your project
  * already has a __io_putchar() override, remove this one and ensure
  * your version is compatible.
@@ -109,11 +109,11 @@ int __io_putchar(int ch)
  * ======================================================================= */
 
 /**
- * @brief HAL write callback — wraps HAL_I2C_Master_Transmit().
+ * @brief HAL write callback - wraps HAL_I2C_Master_Transmit().
  *
  * buf[0] = register address prepended by the core driver.
  * buf[1..len-1] = data payload.
- * Issues one START/STOP for the whole buffer — single I2C transaction.
+ * Issues one START/STOP for the whole buffer - single I2C transaction.
  */
 static npz2100_err_t stm32_i2c_write(uint8_t        i2c_addr,
                                       const uint8_t *buf,
@@ -136,20 +136,20 @@ static npz2100_err_t stm32_i2c_write(uint8_t        i2c_addr,
     }
 
 #if NPZ2100_LOG_ENABLE
-//    /* Log the register and each data byte written. */
-//    printf("[NPZ2100] WR reg=0x%02X data=", buf[0]);
-//    for (size_t i = 1u; i < len; i++) {
-//        //printf("0x%02X", buf[i]);
-//        if (i < len - 1u) { printf(" "); }
-//    }
-//    printf("\r\n");
+    /* Log the register and each data byte written. */
+    printf("[NPZ2100] WR reg=0x%02X data=", buf[0]);
+    for (size_t i = 1u; i < len; i++) {
+        printf("0x%02X", buf[i]);
+        if (i < len - 1u) { printf(" "); }
+    }
+    printf("\r\n");
 #endif
 
     return NPZ2100_OK;
 }
 
 /**
- * @brief HAL read callback — wraps HAL_I2C_Mem_Read().
+ * @brief HAL read callback - wraps HAL_I2C_Mem_Read().
  *
  * Issues: START addr+W, reg, rSTART, addr+R, buf[0..len-1], STOP.
  */
@@ -177,12 +177,12 @@ static npz2100_err_t stm32_i2c_read(uint8_t  i2c_addr,
     }
 
 #if NPZ2100_LOG_ENABLE
-//    printf("[NPZ2100] RD reg=0x%02X data=", reg);
-//    for (size_t i = 0u; i < len; i++) {
-//        printf("0x%02X", buf[i]);
-//        if (i < len - 1u) { printf(" "); }
-//    }
-//    printf("\r\n");
+    printf("[NPZ2100] RD reg=0x%02X data=", reg);
+    for (size_t i = 0u; i < len; i++) {
+        printf("0x%02X", buf[i]);
+        if (i < len - 1u) { printf(" "); }
+    }
+    printf("\r\n");
 #endif
 
     return NPZ2100_OK;
@@ -215,14 +215,14 @@ NPZ2100_Status_t NPZ2100_Init(NPZ2100_Handle_t  *hnpz,
     hnpz->hal.i2c_addr = NPZ2100_I2C_ADDR;
     hnpz->hal.ctx      = (void *)hi2c;
 
-    /* Seed shadow with power-on reset defaults — no I2C transaction. */
+    /* Seed shadow with power-on reset defaults - no I2C transaction. */
     npz2100_err_t err = npz2100_config_init_defaults(&hnpz->shadow);
     if (err != NPZ2100_OK) {
         NPZ_LOG("Init ERROR: shadow init failed (%d)", (int)err);
         return mid_to_status(err);
     }
 
-    /* Probe device — ID register must equal 0x74. */
+    /* Probe device - ID register must equal 0x74. */
     NPZ_LOG("Init: probing I2C addr=0x%02X ...", NPZ2100_I2C_ADDR);
     err = npz2100_probe_ll(&hnpz->hal);
     if (err != NPZ2100_OK) {
@@ -247,7 +247,7 @@ NPZ2100_Status_t NPZ2100_BootStatus(NPZ2100_Handle_t    *hnpz,
 
     uint8_t sta1, sta2, sta3;
 
-    /* Single burst read — STA1/STA2 read also resets the watchdog. */
+    /* Single burst read - STA1/STA2 read also resets the watchdog. */
     npz2100_err_t err = npz2100_status_read(&hnpz->hal, &sta1, &sta2, &sta3);
     if (err != NPZ2100_OK) {
         NPZ_LOG("BootStatus ERROR: STA read failed (%d)", (int)err);
@@ -356,7 +356,7 @@ NPZ2100_Status_t NPZ2100_ApplyRegmap(NPZ2100_Handle_t *hnpz,
 #if NPZ2100_SHADOW_ENABLE
     uint8_t ndiff = npz2100_map_diff_count(&hnpz->shadow, map, map_len);
 #else
-    uint8_t ndiff = 0u;  /* shadow disabled — all registers will be written */
+    uint8_t ndiff = 0u;  /* shadow disabled - all registers will be written */
 #endif
     NPZ_LOG("ApplyRegmap: %u register(s) differ from shadow", (unsigned)ndiff);
 
@@ -389,7 +389,7 @@ npz2100_config_t *NPZ2100_GetShadow(NPZ2100_Handle_t *hnpz)
     return &hnpz->shadow;
 #else
     (void)hnpz;
-    NPZ_LOG("GetShadow: shadow disabled (NPZ2100_SHADOW_ENABLE=0) — returns NULL");
+    NPZ_LOG("GetShadow: shadow disabled (NPZ2100_SHADOW_ENABLE=0) - returns NULL");
     return NULL;
 #endif
 }
@@ -405,7 +405,7 @@ NPZ2100_Status_t NPZ2100_ShadowFlush(NPZ2100_Handle_t *hnpz)
     }
 
 #if !NPZ2100_SHADOW_ENABLE
-    NPZ_LOG("ShadowFlush: shadow disabled (NPZ2100_SHADOW_ENABLE=0) — no-op");
+    NPZ_LOG("ShadowFlush: shadow disabled (NPZ2100_SHADOW_ENABLE=0) - no-op");
     return NPZ2100_OK;
 #else
     NPZ_LOG("ShadowFlush: pushing shadow changes to device ...");

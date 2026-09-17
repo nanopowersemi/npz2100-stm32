@@ -5,13 +5,13 @@
  * Power architecture
  * ------------------
  * The nPZ2100 controls the STM32L053 power supply via its SW_HP host switch.
- * When idle, the nPZ2100 cuts power to the STM32 completely — there is no
+ * When idle, the nPZ2100 cuts power to the STM32 completely - there is no
  * always-on state, no RTOS, no interrupt handler waiting.
  *
  * Every STM32 boot is a fresh start caused by the nPZ2100 re-asserting SW_HP
  * in response to a configured trigger (sensor threshold, ADC limit, alarm…).
  *
- * Required boot sequence — call from main(), before any application logic,
+ * Required boot sequence - call from main(), before any application logic,
  * after HAL_Init() and SystemClock_Config() and MX_I2C1_Init():
  *
  *   NPZ2100_Handle_t npz;
@@ -25,7 +25,7 @@
  *
  *   // ... application logic ...
  *   NPZ2100_ShadowFlush(&npz);           // push runtime config changes
- *   NPZ2100_EnterIdle(&npz);             // STM32 power cut — does not return
+ *   NPZ2100_EnterIdle(&npz);             // STM32 power cut - does not return
  *
  * Integration into STM32CubeIDE
  * ------------------------------
@@ -33,25 +33,25 @@
  *    C/C++ Build -> Settings -> Source Location).
  *    Add NPZ2100/Inc to compiler include paths.
  * 2. Call NPZ2100_Init() after MX_I2C1_Init() in main.c.
- * 3. CubeMX will not overwrite NPZ2100/ — it only touches Core/ and Drivers/.
+ * 3. CubeMX will not overwrite NPZ2100/ - it only touches Core/ and Drivers/.
  *
  * I²C pins: PC4 = SDA, PC5 = SCL  (I2C1, configured in CubeMX)
- * I²C speed: 100 kHz (Standard Mode — matches nPZ2100 max spec)
+ * I²C speed: 100 kHz (Standard Mode - matches nPZ2100 max spec)
  * I²C address: 0x3C (7-bit, factory default)
  *
- * @version 0.7
- * @date    2026-05-06
+ * @version 0.8
+ * @date    2026-09-11
  * @author  Nanopower Semiconductor AS
  */
 
 #ifndef NPZ2100_STM32_H_
 #define NPZ2100_STM32_H_
 
-/* STM32CubeL0 HAL — included first so uint8_t etc. are resolved. */
+/* STM32CubeL0 HAL - included first so uint8_t etc. are resolved. */
 #include "stm32l0xx_hal.h"
 
 /* Platform-agnostic driver layers. */
-#include "npz2100_mid.h"
+#include "npz2100_lib.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,11 +78,11 @@ extern "C" {
  * in main() or a file-scope static.  Initialise with NPZ2100_Init() before
  * calling any other function.
  *
- * The handle is not thread-safe — if using an RTOS, protect with a mutex.
+ * The handle is not thread-safe - if using an RTOS, protect with a mutex.
  */
 typedef struct {
     npz2100_hal_t    hal;      /**< Platform-agnostic HAL callbacks + address. */
-    npz2100_config_t shadow;   /**< Register shadow — mirrors last known device state. */
+    npz2100_config_t shadow;   /**< Register shadow - mirrors last known device state. */
     I2C_HandleTypeDef *hi2c;   /**< Pointer to the CubeMX-generated I²C handle. */
 } NPZ2100_Handle_t;
 
@@ -98,8 +98,8 @@ typedef struct {
  */
 typedef struct {
     /* Reset sources (STA1) */
-    uint8_t rst_src;        /**< System reset source — use NPZ2100_RST_SRC_* */
-    uint8_t srst_src;       /**< Soft reset source   — use NPZ2100_SRST_SRC_* */
+    uint8_t rst_src;        /**< System reset source - use NPZ2100_RST_SRC_* */
+    uint8_t srst_src;       /**< Soft reset source   - use NPZ2100_SRST_SRC_* */
 
     /* Peripheral trigger flags (STA2 bits 5:0) */
     uint8_t periph_mask;    /**< Bitmask: bit N-1 set if peripheral N triggered */
@@ -203,7 +203,7 @@ NPZ2100_Status_t NPZ2100_Readback(NPZ2100_Handle_t *hnpz);
  *
  * @param[in] hnpz     Pointer to initialised NPZ2100_Handle_t.
  * @param[in] map      Byte-stream from the Nanopower configuration tool.
- * @param[in] map_len  Total length in bytes — use sizeof() for compile-time arrays.
+ * @param[in] map_len  Total length in bytes - use sizeof() for compile-time arrays.
  * @return NPZ2100_OK, NPZ2100_ERR_ARG on malformed stream, NPZ2100_ERR_IO
  *         on I²C error.
  */
@@ -214,7 +214,7 @@ NPZ2100_Status_t NPZ2100_ApplyRegmap(NPZ2100_Handle_t *hnpz,
 /**
  * @brief Return a pointer to the driver shadow for use with typed helpers.
  *
- * Use with the mid-level typed helpers (npz2100_sys_set, npz2100_periph_set…)
+ * Use with the lib typed helpers (npz2100_sys_set, npz2100_periph_set…)
  * to modify configuration, then call NPZ2100_ShadowFlush() to push to device.
  *
  * @param[in] hnpz  Pointer to initialised NPZ2100_Handle_t.
@@ -223,7 +223,7 @@ NPZ2100_Status_t NPZ2100_ApplyRegmap(NPZ2100_Handle_t *hnpz,
 npz2100_config_t *NPZ2100_GetShadow(NPZ2100_Handle_t *hnpz);
 
 /**
- * @brief Push shadow changes to the device — write only changed registers.
+ * @brief Push shadow changes to the device - write only changed registers.
  *
  * @param[in] hnpz  Pointer to initialised NPZ2100_Handle_t.
  * @return NPZ2100_OK or NPZ2100_ERR_IO.
@@ -286,7 +286,7 @@ NPZ2100_Status_t NPZ2100_PeriphReadValue(NPZ2100_Handle_t *hnpz,
  *
  * Writes 0xFF to IDLE_RST.  The nPZ2100 will de-assert SW_HP, cutting
  * power to the STM32 completely.  This function does not return in normal
- * operation — the STM32 loses power immediately after the I²C write.
+ * operation - the STM32 loses power immediately after the I²C write.
  *
  * @param[in] hnpz  Pointer to initialised NPZ2100_Handle_t.
  * @return NPZ2100_ERR_IO if the I²C write itself failed (rare).

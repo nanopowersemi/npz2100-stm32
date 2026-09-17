@@ -1,4 +1,4 @@
-# nPZ2100 — STM32L053C8Ux Driver Package
+# nPZ2100 - STM32L053C8Ux Driver Package
 
 **Target:** STM32L053C8Ux · **IDE:** STM32CubeIDE **2.2.0** · **CubeMX:** standalone 6.18.0 · **HAL:** STM32CubeL0
 
@@ -8,13 +8,13 @@
 
 ```
 npz2100_stm32/
-├── README.md                   ← This file — follow it step by step
+├── README.md                   ← This file - follow it step by step
 │
-├── NPZ2100/                    ← Driver — copy this folder into your project
+├── NPZ2100/                    ← Driver - copy this folder into your project
 │   ├── Inc/
 │   │   ├── npz2100_stm32.h     ← Public API  (include in main.c)
 │   │   ├── npz2100_hal.h       ← Platform-agnostic HAL interface
-│   │   ├── npz2100_mid.h       ← Mid-level API (regmap, shadow, typed helpers)
+│   │   ├── npz2100_lib.h       ← Lib API (regmap, shadow, typed helpers)
 │   │   ├── npz2100_regs_system.h
 │   │   ├── npz2100_regs_io.h
 │   │   ├── npz2100_regs_periph.h
@@ -22,7 +22,7 @@ npz2100_stm32/
 │   └── Src/
 │       ├── npz2100_stm32.c     ← STM32 HAL port
 │       ├── npz2100.c           ← Platform-agnostic HAL primitives
-│       └── npz2100_mid.c       ← Platform-agnostic mid-level API
+│       └── npz2100_lib.c       ← Platform-agnostic lib API
 │
 └── Core/                       ← Reference files to merge into your project
     ├── Inc/main.h
@@ -30,7 +30,7 @@ npz2100_stm32/
 ```
 
 > **No `.ioc` file is included.** STM32CubeMX validates `.ioc` files with a
-> strict internal parser — a hand-authored file always fails. Follow the
+> strict internal parser - a hand-authored file always fails. Follow the
 > CubeMX configuration steps in **Step 2** below instead; it takes under
 > 2 minutes.
 
@@ -77,9 +77,9 @@ The steps in this README are fully valid for 6.18.0.
 
 ---
 
-## Integration — 6 steps
+## Integration - 6 steps
 
-### Step 1 — Create a new project in STM32CubeMX
+### Step 1 - Create a new project in STM32CubeMX
 
 1. Open **STM32CubeMX** (standalone app).
 2. Click **ACCESS TO MCU SELECTOR**.
@@ -87,7 +87,7 @@ The steps in this README are fully valid for 6.18.0.
 
 ---
 
-### Step 2 — Configure peripherals
+### Step 2 - Configure peripherals
 
 #### Clock (RCC tab)
 
@@ -115,7 +115,7 @@ Go to **Clock Configuration** tab:
 > register, not `ClockSpeed`/`DutyCycle` (those are STM32F1/F4 fields).
 > CubeMX calculates the `Timing` value automatically from the speed and
 > rise/fall times you enter. The generated value for HSI 16 MHz / 100 kHz
-> / 1000 ns rise / 300 ns fall is `0x00707CBB` — this is already in the
+> / 1000 ns rise / 300 ns fall is `0x00707CBB` - this is already in the
 > provided `main.c`.
 
 After enabling I2C1, CubeMX will try to assign the default I²C1 pins
@@ -139,7 +139,7 @@ If not: **System Core → SYS → Debug → Serial Wire**.
 
 ---
 
-### Step 3 — Configure the project settings
+### Step 3 - Configure the project settings
 
 Go to the **Project Manager** tab:
 
@@ -159,7 +159,7 @@ Click **GENERATE CODE** → click **Open Project** (or open in CubeIDE manually)
 
 ---
 
-### Step 4 — Add the NPZ2100 driver to the generated project
+### Step 4 - Add the NPZ2100 driver to the generated project
 
 1. **Copy** the `NPZ2100/` folder from this package into the generated project
    root (next to `Core/` and `Drivers/`).
@@ -187,16 +187,16 @@ Click **GENERATE CODE** → click **Open Project** (or open in CubeIDE manually)
 
 ---
 
-### Step 5 — Integrate the reference main.c
+### Step 5 - Integrate the reference main.c
 
 The provided `Core/Src/main.c` contains the full nPZ2100 boot sequence
 inside CubeMX `/* USER CODE BEGIN/END */` sections so it survives
 future code regenerations.
 
-**Option A — Replace** (quickest for a fresh project):
+**Option A - Replace** (quickest for a fresh project):
 Copy `Core/Src/main.c` from this package over the CubeMX-generated one.
 
-**Option B — Merge** (if you already have application code):
+**Option B - Merge** (if you already have application code):
 Copy these blocks from the reference `main.c` into your own file:
 
 ```
@@ -208,7 +208,7 @@ USER CODE BEGIN WHILE        →  wake-reason handler → ShadowFlush → EnterI
 
 ---
 
-### Step 6 — Wire the hardware and test
+### Step 6 - Wire the hardware and test
 
 **Hardware connections:**
 
@@ -218,7 +218,7 @@ USER CODE BEGIN WHILE        →  wake-reason handler → ShadowFlush → EnterI
 | SCL | PC5 | I²C1 SCL |
 | VBAT | 3.0–3.3 V | STM32 supply rail |
 | VSS | GND | |
-| SW_HP | STM32L053 VDD | Power control — see note below |
+| SW_HP | STM32L053 VDD | Power control - see note below |
 
 **Required bypass capacitors** (C0G dielectric, placed close to nPZ2100):
 
@@ -229,7 +229,7 @@ USER CODE BEGIN WHILE        →  wake-reason handler → ShadowFlush → EnterI
 | C3 | 10 nF | VDDD |
 
 **Required external I²C pull-up resistors:**
-STM32L053 internal pull-ups are insufficient for 100 kHz — external resistors
+STM32L053 internal pull-ups are insufficient for 100 kHz - external resistors
 are required per ST application note AN10441.
 
 | Ref | Value | Net |
@@ -244,7 +244,7 @@ directly; use an external switch for higher currents.
 
 > **Bench evaluation without power control:** power the STM32 directly from
 > the ST-LINK USB. Leave SW_HP disconnected. I²C communication works
-> normally — `NPZ2100_EnterIdle()` will write the idle command but the STM32
+> normally - `NPZ2100_EnterIdle()` will write the idle command but the STM32
 > stays powered since its supply is independent of SW_HP. This is enough to
 > verify I²C communication and the full boot sequence.
 
@@ -271,21 +271,21 @@ NPZ2100_Handle_t hnpz;
 
 // After HAL_Init(), SystemClock_Config(), MX_I2C1_Init():
 
-// 1. Init — probe device (ID must = 0x74), seed shadow
+// 1. Init - probe device (ID must = 0x74), seed shadow
 NPZ2100_Init(&hnpz, &hi2c1);
 
-// 2. Read wake reason — ALWAYS first I²C op; also kicks watchdog
+// 2. Read wake reason - ALWAYS first I²C op; also kicks watchdog
 NPZ2100_WakeReason_t reason;
 NPZ2100_BootStatus(&hnpz, &reason);
 
-// 3. Sync shadow — nPZ2100 retains registers while STM32 is off
+// 3. Sync shadow - nPZ2100 retains registers while STM32 is off
 NPZ2100_Readback(&hnpz);
 
-// 4. Apply desired config — only changed registers written
+// 4. Apply desired config - only changed registers written
 NPZ2100_ApplyRegmap(&hnpz, regmap, sizeof(regmap));
 
 // 5. Handle wake reason
-if (reason.rst_src == NPZ2100_RST_SRC_POR) { /* cold boot — write SRAM */ }
+if (reason.rst_src == NPZ2100_RST_SRC_POR) { /* cold boot - write SRAM */ }
 if (reason.periph_mask & 0x01)             { /* peripheral 1 triggered */ }
 if (reason.adc3)                           { /* battery threshold      */ }
 if (reason.timeout)                        { /* periodic time-out      */ }
@@ -293,7 +293,7 @@ if (reason.timeout)                        { /* periodic time-out      */ }
 // 6. Push any runtime config changes made via typed helpers
 NPZ2100_ShadowFlush(&hnpz);
 
-// 7. Re-enter idle — power cut — does NOT return
+// 7. Re-enter idle - power cut - does NOT return
 NPZ2100_EnterIdle(&hnpz);
 ```
 
@@ -312,7 +312,7 @@ NPZ2100_EnterIdle(&hnpz);
 | `NPZ2100_SramWrite(h, addr, data, len)` | Write sensor init cmds to SRAM |
 | `NPZ2100_SramRead(h, addr, data, len)` | Read from SRAM |
 | `NPZ2100_PeriphReadValue(h, slot, &v)` | Read last peripheral sample |
-| `NPZ2100_EnterIdle(h)` | Idle command — power cut — does not return |
+| `NPZ2100_EnterIdle(h)` | Idle command - power cut - does not return |
 | `NPZ2100_SoftReset(h)` | Soft reset (config + SRAM preserved) |
 
 All functions return `NPZ2100_OK` (0) on success or a negative `NPZ2100_Status_t`.
@@ -331,6 +331,73 @@ All functions return `NPZ2100_OK` (0) on success or a negative `NPZ2100_Status_t
 | `counter` | Event counter reached trigger value |
 | `nak_mask` | Bitmask: peripheral N+1 NAK'd I²C |
 
+
+---
+
+## SRAM data-log
+
+The nPZ2100 autonomously logs peripheral sensor readings into its SRAM while
+the STM32 is powered off.  Use `npz2100_datalog.h` to extract and parse the
+log after waking up.
+
+Add the include in `main.c`:
+
+```c
+#include "npz2100_stm32.h"
+#include "npz2100_datalog.h"   /* include after npz2100_stm32.h */
+```
+
+### Extracting the log on FLOG wake
+
+The `FLOG` flag in `reason.log_full` indicates that the log is full and
+the nPZ2100 has stopped logging (unless rotation was enabled).  Extract
+the log before re-entering idle to avoid losing data.
+
+```c
+if (reason.log_full) {
+
+    npz2100_datalog_info_t  info;
+    npz2100_datalog_entry_t entries[64];
+    size_t count = 0u;
+
+    npz2100_config_t *shadow = NPZ2100_GetShadow(&hnpz);
+
+    /* 1. Read metadata: LOGCFG, LOGCADDR, idle-entry timestamp */
+    npz2100_datalog_read_info(&hnpz.hal, shadow, &info);
+
+    /* 2. Read and parse all entries - oldest-first, rotation handled */
+    npz2100_datalog_read_entries(&hnpz.hal, shadow, &info,
+                                  entries, 64u, &count);
+
+    /* 3. Process entries */
+    for (size_t i = 0u; i < count; i++) {
+        npz2100_datalog_entry_t *e = &entries[i];
+        /* Fields: e->peripheral, e->triggered, e->timestamp, e->value */
+        /* Upload via UART, store to flash, etc. */
+    }
+
+    /* 4. Clear log so next idle cycle starts fresh */
+    npz2100_datalog_clear(&hnpz.hal, shadow, &info);
+}
+```
+
+### Data-log API summary
+
+| Function | Description |
+|---|---|
+| `npz2100_datalog_read_info(hal, cfg, &info)` | Read LOGCFG + LOGCADDR + idle-entry timestamp |
+| `npz2100_datalog_entry_size(cfg, slot)` | Byte size of one entry for a peripheral slot |
+| `npz2100_datalog_parse_entry(buf, len, cfg, &entry)` | Parse one entry from a raw buffer |
+| `npz2100_datalog_read_raw(hal, cfg, &info, buf, len, &n)` | Raw SRAM read, oldest-first |
+| `npz2100_datalog_read_entries(hal, cfg, &info, entries, max, &n)` | Read + parse all entries |
+| `npz2100_datalog_clear(hal, cfg, &info)` | Erase log region, reset write pointer |
+
+### Log rotation
+
+Set `LOG_ROT=1` in your regmap so the nPZ2100 wraps around instead of
+stopping on a full log.  Check `info.rotated` after `read_info()`.
+`read_entries()` always returns entries oldest-first regardless of rotation.
+
 ---
 
 ## Troubleshooting
@@ -342,7 +409,7 @@ All functions return `NPZ2100_OK` (0) on success or a negative `NPZ2100_Status_t
 | `NPZ2100_ERR_IO` on first write only | Clock mismatch | Verify I2C1 clock source is HSI in CubeMX Clock Config tab |
 | Build error: `npz2100_stm32.h: No such file` | Include path missing | Add `../NPZ2100/Inc` in Project → Properties → GCC Compiler → Include paths |
 | Build error: `undefined reference to NPZ2100_Init` | Source folder missing | Add `NPZ2100/Src` in Project → Properties → GCC Compiler → Source Location |
-| Build error: `no member named 'ClockSpeed'` | Wrong I2C init fields | STM32L0 uses `hi2c1.Init.Timing` — never `ClockSpeed`/`DutyCycle`. Use the provided `main.c`. |
+| Build error: `no member named 'ClockSpeed'` | Wrong I2C init fields | STM32L0 uses `hi2c1.Init.Timing` - never `ClockSpeed`/`DutyCycle`. Use the provided `main.c`. |
 | Build error: `redeclaration of enumerator 'NPZ2100_OK'` | Duplicate enum | `NPZ2100_Status_t` must be a typedef alias of `npz2100_err_t`, not a new enum. Use the provided `npz2100_stm32.h`. |
 | `NPZ2100_ERR_ARG` from `ApplyRegmap` | Malformed regmap | Check segment length bytes: `length = 1 (start_addr) + N (data bytes)` |
 | Regenerating code breaks main.c | Code outside USER CODE blocks | Keep all nPZ2100 code inside `/* USER CODE BEGIN/END */` fences |
@@ -351,4 +418,4 @@ All functions return `NPZ2100_OK` (0) on success or a negative `NPZ2100_Status_t
 
 ## Contact
 
-Nanopower Semiconductor AS — www.nanopowersemi.com — info@nanopowersemi.com
+Nanopower Semiconductor AS - www.nanopowersemi.com - info@nanopowersemi.com

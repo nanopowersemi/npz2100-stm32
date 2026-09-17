@@ -1,6 +1,6 @@
 /**
  * @file npz2100_all.c
- * @brief Aggregator — compiles all nPZ2100 driver sources in one translation unit.
+ * @brief Aggregator - compiles all nPZ2100 driver sources in one translation unit.
  *
  * WHY THIS FILE EXISTS
  * --------------------
@@ -27,5 +27,6 @@
  *   MCU GCC Compiler → Include paths → Add → ../NPZ2100/Inc          */
 
 #include "../../NPZ2100/Src/npz2100.c"
-#include "../../NPZ2100/Src/npz2100_mid.c"
+#include "../../NPZ2100/Src/npz2100_lib.c"
 #include "../../NPZ2100/Src/npz2100_stm32.c"
+#include "../../NPZ2100/Src/npz2100_datalog.c"
